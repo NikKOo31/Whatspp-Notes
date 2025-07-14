@@ -7,7 +7,15 @@
 // @match        https://web.whatsapp.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=whatsapp.com
 // @grant        none
+// @updateURL    https://github.com/NikKOo31/Whatspp-Notes/raw/refs/heads/main/whatsapp-notes.user.js
+// @downloadURL  https://github.com/NikKOo31/Whatspp-Notes/raw/refs/heads/main/whatsapp-notes.user.js
 // ==/UserScript==
+
+/*
+Changelog:
+v0.1 (14-07-2025)
+- Versión inicial: guarda notas por contacto en WhatsApp Web.
+*/
 
 (function () {
     'use strict';
