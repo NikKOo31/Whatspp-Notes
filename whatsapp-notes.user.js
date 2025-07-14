@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notas en whatsapp web
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  Notas en whatsapp web
 // @author       Nico
 // @match        https://web.whatsapp.com/*
@@ -30,7 +30,7 @@ v0.1 (14-07-2025)
         style.textContent = `
             #chatnotes-panel {
                 padding: 10px;
-                background: #f8f9fa;
+                background: #161717;
                 border-top: 1px solid #ccc;
                 font-size: 14px;
                 color: #333;
@@ -50,13 +50,25 @@ v0.1 (14-07-2025)
                 border-radius: 4px;
             }
 
+            #chatnotes-panel .chatnotes-button-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            #chatnotes-panel .chatnotes-status {
+                flex: 1;
+                color: #d9534f;
+                font-size: 13px;
+            }
+
             #chatnotes-panel .chatnotes-button {
                 align-self: flex-end;
                 padding: 6px 12px;
                 border: none;
                 border-radius: 4px;
-                background: #555;
-                color: #fff;
+                background: #f8f9fa;
+                color: #000;
                 cursor: pointer;
             }
 
@@ -74,14 +86,22 @@ v0.1 (14-07-2025)
         const textArea = document.createElement('textarea');
         textArea.className = 'chatnotes-textarea';
         textArea.placeholder = 'Escribí tus notas para este contacto...';
-        textArea.value = localStorage.getItem('notes_' + contactName) || '';
+        let originalValue = localStorage.getItem('notes_' + contactName) || '';
+        textArea.value = originalValue;
+
+        const status = document.createElement('span');
+        status.className = 'chatnotes-status';
+        status.textContent = '';
 
         const saveButton = document.createElement('button');
         saveButton.className = 'chatnotes-button';
         saveButton.textContent = '💾 Guardar';
 
         saveButton.addEventListener('click', () => {
-            localStorage.setItem('notes_' + contactName, textArea.value.trim());
+            const newValue = textArea.value.trim();
+            localStorage.setItem('notes_' + contactName, newValue);
+            originalValue = newValue;
+            status.textContent = '';
             saveButton.textContent = '✅ Guardado';
             saveButton.disabled = true;
             setTimeout(() => {
@@ -90,8 +110,22 @@ v0.1 (14-07-2025)
             }, 1500);
         });
 
+        textArea.addEventListener('input', () => {
+            const currentValue = textArea.value.trim();
+            if (currentValue !== originalValue) {
+                status.textContent = 'Cambios sin guardar';
+            } else {
+                status.textContent = '';
+            }
+        });
+
+        const controls = document.createElement('div');
+        controls.className = 'chatnotes-button-container';
+        controls.appendChild(status);
+        controls.appendChild(saveButton);
+
         container.appendChild(textArea);
-        container.appendChild(saveButton);
+        container.appendChild(controls);
         return container;
     }
 
@@ -118,7 +152,7 @@ v0.1 (14-07-2025)
             const main = document.querySelector('#main span');
             const contactName = main?.textContent || '';
 
-            if (main && contactName !== currentContact) {
+            if (main && contactName.length > 0 && contactName !== currentContact) {
                 insertOrReplacePanel(contactName);
             }
         });
