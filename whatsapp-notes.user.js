@@ -153,9 +153,8 @@ v0.1 (14-07-2025)
             }
 
             lineCount = countNonEmptyLines(textArea.value.trim());
-            if (contentWrapper.classList.contains('chatnotes-hidden')) {
-                toggleButton.textContent = `📝 Mostrar notas (${lineCount})`;
-            }
+            const isHidden = contentWrapper.classList.contains('chatnotes-hidden');
+            toggleButton.textContent = isHidden ? `📝 Ocultar notas (${lineCount})` : `📝 Mostrar notas (${lineCount})`;
         });
 
         function countNonEmptyLines(text) {
