@@ -1,0 +1,135 @@
+// ==UserScript==
+// @name         Notas en whatsapp web
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  Notas en whatsapp web
+// @author       Nico
+// @match        https://web.whatsapp.com/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=whatsapp.com
+// @grant        none
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    let currentContact = '';
+
+    function applyStyles() {
+        if (document.getElementById('chatnotes-style')) return;
+
+        const style = document.createElement('style');
+        style.id = 'chatnotes-style';
+        style.textContent = `
+            #chatnotes-panel {
+                padding: 10px;
+                background: #f8f9fa;
+                border-top: 1px solid #ccc;
+                font-size: 14px;
+                color: #333;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                z-index: 99999;
+            }
+
+            #chatnotes-panel .chatnotes-textarea {
+                width: 100%;
+                height: 80px;
+                resize: vertical;
+                font-size: 14px;
+                padding: 6px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+
+            #chatnotes-panel .chatnotes-button {
+                align-self: flex-end;
+                padding: 6px 12px;
+                border: none;
+                border-radius: 4px;
+                background: #555;
+                color: #fff;
+                cursor: pointer;
+            }
+
+            #chatnotes-panel .chatnotes-button:disabled {
+                background: #999;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function createNotesPanel(contactName) {
+        const container = document.createElement('div');
+        container.id = 'chatnotes-panel';
+
+        const textArea = document.createElement('textarea');
+        textArea.className = 'chatnotes-textarea';
+        textArea.placeholder = 'Escribí tus notas para este contacto...';
+        textArea.value = localStorage.getItem('notes_' + contactName) || '';
+
+        const saveButton = document.createElement('button');
+        saveButton.className = 'chatnotes-button';
+        saveButton.textContent = '💾 Guardar';
+
+        saveButton.addEventListener('click', () => {
+            localStorage.setItem('notes_' + contactName, textArea.value.trim());
+            saveButton.textContent = '✅ Guardado';
+            saveButton.disabled = true;
+            setTimeout(() => {
+                saveButton.textContent = '💾 Guardar';
+                saveButton.disabled = false;
+            }, 1500);
+        });
+
+        container.appendChild(textArea);
+        container.appendChild(saveButton);
+        return container;
+    }
+
+    function insertOrReplacePanel(contactName) {
+        currentContact = contactName;
+
+        const mainHeader = document.querySelector('#main header');
+        if (!mainHeader) return;
+
+        const parent = mainHeader.parentElement;
+        if (!parent) return;
+
+        // Eliminar si ya existe
+        const oldPanel = document.getElementById('chatnotes-panel');
+        if (oldPanel) oldPanel.remove();
+
+        // Crear e insertar
+        const panel = createNotesPanel(contactName);
+        parent.insertBefore(panel, mainHeader.nextSibling);
+    }
+
+    function observePage() {
+        const observer = new MutationObserver(() => {
+            const main = document.querySelector('#main span');
+            const contactName = main?.textContent || '';
+
+            if (main && contactName !== currentContact) {
+                insertOrReplacePanel(contactName);
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    }
+
+    const init = setInterval(() => {
+        const app = document.querySelector('#app');
+        if (app) {
+            clearInterval(init);
+            applyStyles();
+            observePage();
+
+            const contactName = document.querySelector('#main span')?.textContent;
+            if (contactName) insertOrReplacePanel(contactName);
+        }
+    }, 500);
+})();
