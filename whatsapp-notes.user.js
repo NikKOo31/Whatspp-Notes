@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notas en whatsapp web
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  Notas en whatsapp web
 // @author       Nico
 // @match        https://web.whatsapp.com/*
@@ -13,12 +13,18 @@
 
 /*
 Changelog:
+v0.3
+- Notas ocultas por defecto
+- Indicador de lineas existentes en la nota
+- Botón para mostrar/ocultar notas
+- Botón para eliminacion de notas
+
 v0.2
-- Aviso de datos sin guardar
-- Estilos
+- Aviso de datos sin guardar en la nota
+- Mejora de estilos
 
 v0.1 (14-07-2025)
-- Versión inicial: guarda notas por contacto en WhatsApp Web.
+- Versión inicial: guardado de notas por contacto en WhatsApp Web.
 */
 
 (function () {
@@ -44,26 +50,66 @@ v0.1 (14-07-2025)
                 z-index: 99999;
             }
 
+            #chatnotes-panel .chatnotes-toggle {
+                background: transparent;
+                border: none;
+                color: #fff;
+                cursor: pointer;
+                font-size: 14px;
+                padding: 0;
+            }
+
+            #chatnotes-panel .chatnotes-content {
+                overflow: hidden;
+                max-height: 0;
+                opacity: 0;
+                transition: max-height 0.3s ease, opacity 0.3s ease;
+                margin-top: 6px;
+            }
+
+            #chatnotes-panel .chatnotes-content.chatnotes-visible {
+                max-height: 300px;
+                opacity: 1;
+            }
+
+            #chatnotes-panel .chatnotes-content.chatnotes-hidden {
+                max-height: 0;
+                opacity: 0;
+            }
+
             #chatnotes-panel .chatnotes-textarea {
                 width: 100%;
                 height: 80px;
                 resize: vertical;
-                font-size: 14px;
                 padding: 6px;
                 border: 1px solid #ccc;
                 border-radius: 4px;
+                box-sizing: border-box;
+                line-height: 1.4em;
+                font-size: 14px;
+                height: calc(1.4em * 5 + 12px); /* 5 líneas + padding */
             }
 
-            #chatnotes-panel .chatnotes-button-container {
+            #chatnotes-panel .chatnotes-textarea {
+                overflow-y: scroll; /* en lugar de auto */
+            }
+
+            #chatnotes-panel .chatnotes-controls-container {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                margin-top: 6px;
             }
 
             #chatnotes-panel .chatnotes-status {
                 flex: 1;
                 color: #d9534f;
                 font-size: 13px;
+            }
+
+            #chatnotes-panel .chatnotes-button-group {
+                display: flex;
+                gap: 6px;
             }
 
             #chatnotes-panel .chatnotes-button {
@@ -87,9 +133,14 @@ v0.1 (14-07-2025)
         const container = document.createElement('div');
         container.id = 'chatnotes-panel';
 
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'chatnotes-content chatnotes-hidden';
+
         const textArea = document.createElement('textarea');
         textArea.className = 'chatnotes-textarea';
+        textArea.id = 'chatnotes-textarea';
         textArea.placeholder = 'Escribí tus notas para este contacto...';
+
         let originalValue = localStorage.getItem('notes_' + contactName) || '';
         textArea.value = originalValue;
 
@@ -100,14 +151,26 @@ v0.1 (14-07-2025)
             } else {
                 status.textContent = '';
             }
+
+            lineCount = countNonEmptyLines(textArea.value.trim());
+            if (contentWrapper.classList.contains('chatnotes-hidden')) {
+                toggleButton.textContent = `📝 Mostrar notas (${lineCount})`;
+            }
         });
+
+        function countNonEmptyLines(text) {
+            return text
+                .split('\n')
+                .filter(line => line.trim() !== '')
+                .length;
+        }
 
         const status = document.createElement('span');
         status.className = 'chatnotes-status';
         status.textContent = '';
 
         const saveButton = document.createElement('button');
-        saveButton.className = 'chatnotes-button';
+        saveButton.className = 'chatnotes-button chatnotes-save';
         saveButton.textContent = '💾 Guardar';
 
         saveButton.addEventListener('click', () => {
@@ -123,13 +186,51 @@ v0.1 (14-07-2025)
             }, 1500);
         });
 
-        const controls = document.createElement('div');
-        controls.className = 'chatnotes-button-container';
-        controls.appendChild(status);
-        controls.appendChild(saveButton);
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'chatnotes-button chatnotes-delete';
+        deleteButton.textContent = '🗑 Borrar';
 
-        container.appendChild(textArea);
-        container.appendChild(controls);
+        deleteButton.addEventListener('click', () => {
+            if (confirm('¿Seguro que querés borrar esta nota?')) {
+                localStorage.removeItem('notes_' + contactName);
+                textArea.value = '';
+                originalValue = '';
+                status.textContent = '';
+            }
+        });
+
+        const toggleButton = document.createElement('button');
+        let lineCount = countNonEmptyLines(originalValue);
+        toggleButton.textContent = `📝 Mostrar notas (${lineCount})`;
+        toggleButton.className = 'chatnotes-toggle';
+
+        toggleButton.addEventListener('click', () => {
+            const isHidden = contentWrapper.classList.contains('chatnotes-hidden');
+            contentWrapper.classList.toggle('chatnotes-hidden', !isHidden);
+            contentWrapper.classList.toggle('chatnotes-visible', isHidden);
+            toggleButton.textContent = isHidden ? `📝 Ocultar notas (${lineCount})` : `📝 Mostrar notas (${lineCount})`;
+            if (isHidden) {
+                setTimeout(() => {
+                    textArea.focus();
+                }, 300);
+            }
+        });
+
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'chatnotes-button-group';
+        btnGroup.appendChild(saveButton);
+        btnGroup.appendChild(deleteButton);
+
+        const controls = document.createElement('div');
+        controls.className = 'chatnotes-controls-container';
+        controls.appendChild(status);
+        controls.appendChild(btnGroup);
+
+        contentWrapper.appendChild(textArea);
+        contentWrapper.appendChild(controls);
+
+        container.appendChild(toggleButton);
+        container.appendChild(contentWrapper);
         return container;
     }
 
@@ -142,11 +243,9 @@ v0.1 (14-07-2025)
         const parent = mainHeader.parentElement;
         if (!parent) return;
 
-        // Eliminar si ya existe
         const oldPanel = document.getElementById('chatnotes-panel');
         if (oldPanel) oldPanel.remove();
 
-        // Crear e insertar
         const panel = createNotesPanel(contactName);
         parent.insertBefore(panel, mainHeader.nextSibling);
     }
