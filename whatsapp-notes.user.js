@@ -18,6 +18,7 @@ v0.3
 - Indicador de lineas existentes en la nota
 - Botón para mostrar/ocultar notas
 - Botón para eliminacion de notas
+- Corrección de estilos
 
 v0.2
 - Aviso de datos sin guardar en la nota
@@ -41,12 +42,11 @@ v0.1 (14-07-2025)
             #chatnotes-panel {
                 padding: 10px;
                 background: #161717;
-                border-top: 1px solid #ccc;
+                border: 1px solid #ccc;
                 font-size: 14px;
                 color: #333;
                 display: flex;
                 flex-direction: column;
-                gap: 6px;
                 z-index: 99999;
             }
 
@@ -64,16 +64,17 @@ v0.1 (14-07-2025)
                 max-height: 0;
                 opacity: 0;
                 transition: max-height 0.3s ease, opacity 0.3s ease;
-                margin-top: 6px;
             }
 
             #chatnotes-panel .chatnotes-content.chatnotes-visible {
                 max-height: 300px;
+                margin-top: 6px;
                 opacity: 1;
             }
 
             #chatnotes-panel .chatnotes-content.chatnotes-hidden {
                 max-height: 0;
+                margin-top: 0px;
                 opacity: 0;
             }
 
