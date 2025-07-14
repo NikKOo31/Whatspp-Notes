@@ -13,6 +13,10 @@
 
 /*
 Changelog:
+v0.2
+- Aviso de datos sin guardar
+- Estilos
+
 v0.1 (14-07-2025)
 - Versión inicial: guarda notas por contacto en WhatsApp Web.
 */
@@ -89,6 +93,15 @@ v0.1 (14-07-2025)
         let originalValue = localStorage.getItem('notes_' + contactName) || '';
         textArea.value = originalValue;
 
+        textArea.addEventListener('input', () => {
+            const currentValue = textArea.value.trim();
+            if (currentValue !== originalValue) {
+                status.textContent = 'Cambios sin guardar';
+            } else {
+                status.textContent = '';
+            }
+        });
+
         const status = document.createElement('span');
         status.className = 'chatnotes-status';
         status.textContent = '';
@@ -110,15 +123,6 @@ v0.1 (14-07-2025)
             }, 1500);
         });
 
-        textArea.addEventListener('input', () => {
-            const currentValue = textArea.value.trim();
-            if (currentValue !== originalValue) {
-                status.textContent = 'Cambios sin guardar';
-            } else {
-                status.textContent = '';
-            }
-        });
-
         const controls = document.createElement('div');
         controls.className = 'chatnotes-button-container';
         controls.appendChild(status);
@@ -129,7 +133,7 @@ v0.1 (14-07-2025)
         return container;
     }
 
-    function insertOrReplacePanel(contactName) {
+    function insertPanel(contactName) {
         currentContact = contactName;
 
         const mainHeader = document.querySelector('#main header');
@@ -153,7 +157,7 @@ v0.1 (14-07-2025)
             const contactName = main?.textContent || '';
 
             if (main && contactName.length > 0 && contactName !== currentContact) {
-                insertOrReplacePanel(contactName);
+                insertPanel(contactName);
             }
         });
 
@@ -171,7 +175,7 @@ v0.1 (14-07-2025)
             observePage();
 
             const contactName = document.querySelector('#main span')?.textContent;
-            if (contactName) insertOrReplacePanel(contactName);
+            if (contactName) insertPanel(contactName);
         }
     }, 500);
 })();
