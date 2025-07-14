@@ -152,10 +152,6 @@ v0.1 (14-07-2025)
             } else {
                 status.textContent = '';
             }
-
-            lineCount = countNonEmptyLines(textArea.value.trim());
-            const isHidden = contentWrapper.classList.contains('chatnotes-hidden');
-            toggleButton.textContent = isHidden ? `📝 Ocultar notas (${lineCount})` : `📝 Mostrar notas (${lineCount})`;
         });
 
         function countNonEmptyLines(text) {
@@ -184,6 +180,8 @@ v0.1 (14-07-2025)
                 saveButton.textContent = '💾 Guardar';
                 saveButton.disabled = false;
             }, 1500);
+
+            updateToggleButton();
         });
 
         const deleteButton = document.createElement('button');
@@ -196,6 +194,7 @@ v0.1 (14-07-2025)
                 textArea.value = '';
                 originalValue = '';
                 status.textContent = '';
+                updateToggleButton();
             }
         });
 
@@ -208,13 +207,20 @@ v0.1 (14-07-2025)
             const isHidden = contentWrapper.classList.contains('chatnotes-hidden');
             contentWrapper.classList.toggle('chatnotes-hidden', !isHidden);
             contentWrapper.classList.toggle('chatnotes-visible', isHidden);
-            toggleButton.textContent = isHidden ? `📝 Ocultar notas (${lineCount})` : `📝 Mostrar notas (${lineCount})`;
             if (isHidden) {
                 setTimeout(() => {
                     textArea.focus();
                 }, 300);
             }
+
+            updateToggleButton();
         });
+
+        function updateToggleButton() {
+            lineCount = countNonEmptyLines(textArea.value.trim());
+            const isHidden = contentWrapper.classList.contains('chatnotes-hidden');
+            toggleButton.textContent = isHidden ? `📝 Ocultar notas (${lineCount})` : `📝 Mostrar notas (${lineCount})`;
+        }
 
         const btnGroup = document.createElement('div');
         btnGroup.className = 'chatnotes-button-group';
